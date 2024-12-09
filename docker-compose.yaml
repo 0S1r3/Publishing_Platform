@@ -16,11 +16,11 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: school_db
+      POSTGRES_DB: publishing
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     ports:
-      - "5434:5432"  # Подключение к PostgreSQL через порт 5434
+      - "5440:5442"  # Подключение к PostgreSQL через порт 5434
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./postgresql.conf:/etc/postgresql/postgresql.conf
