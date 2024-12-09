@@ -1,46 +1,33 @@
-#Бля как установить composer. Типо папочку venv для того чтобы laravel работал прям в проект добавить надо.
-#ну бля, композер ставится отдельно и там можно с помощью него создать сам проект, и уже этот проект открыть в vs, вроде бы так было
-# это типо как в python, который для сервера
-#ща в тг скину че мне гпт писал
-# https://chatgpt.com/share/67573244-4ea4-8002-9fb2-5f49036a99ff
+# Используем официальный PHP образ с поддержкой FPM (обновляем до версии 8.2)
+FROM php:8.2-fpm
 
-# Указываем базовый образ PHP с поддержкой FPM
-FROM php:8.1-fpm
-
-# Устанавливаем основные зависимости
+# Устанавливаем системные зависимости и PHP-расширения
 RUN apt-get update && apt-get install -y \
-    curl \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libonig-dev \
+    libpq-dev \
     libzip-dev \
+    zip \
     unzip \
     git \
-    vim \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl gd
+    curl \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install pdo pdo_pgsql zip fileinfo
 
 # Устанавливаем Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Настраиваем рабочую директорию
-WORKDIR /var/www
+# Устанавливаем рабочую директорию
+WORKDIR /var/www/html
 
-# Устанавливаем права для кэширования
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www
+# Копируем файлы проекта
+COPY . .
 
-# Устанавливаем Laravel Echo Server (опционально)
-RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - \
-    && apt-get install -y nodejs \
-    && npm install -g laravel-echo-server
+# Устанавливаем зависимости через Composer
+RUN composer install --no-dev --optimize-autoloader
 
-# Копируем файл конфигурации PHP (опционально, если требуется)
-COPY ./docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
+# Устанавливаем права доступа для storage и bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Устанавливаем точку входа
-CMD ["php-fpm"]
-
-# Указываем порт
+# Открываем порт для работы
 EXPOSE 9000
+
+CMD ["php-fpm"]
